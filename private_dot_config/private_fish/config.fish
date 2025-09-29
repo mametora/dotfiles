@@ -17,16 +17,18 @@ end
 set --erase _asdf_shims
 
 # pnpm
-set -gx PNPM_HOME "/Users/masuda/Library/pnpm"
+set -gx PNPM_HOME "/Users/mametora/Library/pnpm"
 if not string match -q -- $PNPM_HOME $PATH
   set -gx PATH "$PNPM_HOME" $PATH
 end
 # pnpm end
 
-if status is-interactive
-    # Commands to run in interactive sessions can go here
-end
-
 # Added by LM Studio CLI (lms)
 set -gx PATH $PATH /Users/mametora/.lmstudio/bin
 # End of LM Studio CLI section
+
+set -gx PATH $PATH "$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
+
+if status is-interactive
+    # Commands to run in interactive sessions can go here
+end
