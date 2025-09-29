@@ -28,4 +28,5 @@ if status is-interactive
 end
 
 # Added by LM Studio CLI (lms)
-set -gx PATH $PATH /Users/masuda/.lmstudio/bin
+set -gx PATH $PATH /Users/mametora/.lmstudio/bin
+# End of LM Studio CLI section
