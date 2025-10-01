@@ -32,3 +32,6 @@ set -gx PATH $PATH "$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 if status is-interactive
     # Commands to run in interactive sessions can go here
 end
+
+# Created by `pipx` on 2025-10-01 12:08:11
+set PATH $PATH /Users/mametora/.local/bin

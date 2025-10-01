@@ -23,7 +23,7 @@ brew "gibo"
 brew "gnupg"
 brew "graphviz"
 brew "grep"
-brew "httpie"
+brew "httpie", link: false
 brew "libyaml"
 brew "mas"
 brew "netdata"
