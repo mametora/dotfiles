@@ -105,3 +105,6 @@ fabric.properties
 
 # all
 .idea
+
+# claude
+**/.claude/settings.local.json
