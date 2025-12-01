@@ -1,5 +1,5 @@
 github.com:
     user: mametora
-    git_protocol: ssh
+    git_protocol: https
     users:
         mametora:
