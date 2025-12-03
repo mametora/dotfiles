@@ -1,5 +1,4 @@
 {
-  "alwaysThinkingEnabled": false,
   "hooks": {
     "SessionEnd": [
       {
@@ -21,5 +20,6 @@
         ]
       }
     ]
-  }
+  },
+  "alwaysThinkingEnabled": true
 }
