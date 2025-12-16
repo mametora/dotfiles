@@ -22,3 +22,5 @@
 	editor = code --wait
 [pull]
 	rebase = true
+[init]
+	defaultBranch = master
