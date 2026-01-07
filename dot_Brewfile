@@ -83,7 +83,6 @@ cask "warp"
 cask "windows-app"
 cask "zoom"
 mas "1Password for Safari", id: 1569813296
-mas "Balatro", id: 6502451661
 mas "Discovery", id: 1381004916
 mas "GarageBand", id: 682658836
 mas "iMovie", id: 408981434
@@ -98,7 +97,6 @@ mas "Pages", id: 409201541
 mas "SonicWall Mobile Connect", id: 822514576
 mas "Speedtest", id: 1153157709
 mas "WireGuard", id: 1451685025
-mas "ZenPinballParty", id: 1536783591
 mas "デリバリーズ", id: 290986013
 vscode "alefragnani.project-manager"
 vscode "alexcvzz.vscode-sqlite"
