@@ -15,7 +15,8 @@
       "mcp__serena__think_about_task_adherence",
       "mcp__MCP_DOCKER__pull_request_read",
       "mcp__MCP_DOCKER__list_directory_tree_in_folder",
-      "Bash(PYTHONPATH=. poetry run pytest:*)"
+      "Bash(PYTHONPATH=. poetry run pytest:*)",
+      "mcp__chrome-devtools"
     ],
     "deny": [],
     "ask": [],
