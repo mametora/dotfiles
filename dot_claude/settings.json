@@ -16,7 +16,13 @@
       "mcp__MCP_DOCKER__pull_request_read",
       "mcp__MCP_DOCKER__list_directory_tree_in_folder",
       "Bash(PYTHONPATH=. poetry run pytest:*)",
-      "mcp__chrome-devtools"
+      "mcp__chrome-devtools",
+      "mcp__jetbrains__list_directory_tree",
+      "Bash(grep:*)",
+      "mcp__jetbrains__get_file_text_by_path",
+      "Bash(ls:*)",
+      "mcp__jetbrains__find_files_by_glob",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": [],
@@ -44,5 +50,7 @@
       }
     ]
   },
-  "alwaysThinkingEnabled": true
+  "language": "Japanese",
+  "alwaysThinkingEnabled": true,
+  "autoUpdatesChannel": "latest"
 }
