@@ -29,9 +29,11 @@ set -gx PATH $PATH /Users/mametora/.lmstudio/bin
 
 set -gx PATH $PATH "$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 
+# Created by `pipx` on 2025-10-01 12:08:11
+set PATH $PATH /Users/mametora/.local/bin
+
+source /Users/mametora/.config/op/plugins.sh
+
 if status is-interactive
     # Commands to run in interactive sessions can go here
 end
-
-# Created by `pipx` on 2025-10-01 12:08:11
-set PATH $PATH /Users/mametora/.local/bin
