@@ -40,15 +40,19 @@ if [ ! -f "$TRANSCRIPT_PATH" ]; then
 fi
 
 # プロジェクトルートとログファイル名を生成
-HOOKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLAUDE_DIR="$(dirname "$HOOKS_DIR")"    # .claude/
-PROJECT_ROOT="$(dirname "$CLAUDE_DIR")" # project root
+# フック入力JSONのcwdからプロジェクトルートを取得
+PROJECT_ROOT=$(echo "$HOOK_INPUT" | jq -r '.cwd // empty')
+if [ -z "$PROJECT_ROOT" ]; then
+  echo "Error: cwd not found in hook input" >&2
+  exit 1
+fi
+PROJECT_ROOT="${PROJECT_ROOT/#\~/$HOME}"
 CONVERSATION_ID=$(basename "$TRANSCRIPT_PATH" .jsonl)
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 LOG_FILE="/tmp/suggest-claude-md-${CONVERSATION_ID}-${TIMESTAMP}.log"
 
 # コマンド定義ファイルのチェック
-COMMAND_FILE="$PROJECT_ROOT/.claude/commands/suggest-claude-md.md"
+COMMAND_FILE="$HOME/.claude/commands/suggest-claude-md.md"
 if [ ! -f "$COMMAND_FILE" ]; then
   echo "Error: Command definition file not found: $COMMAND_FILE" >&2
   echo "Please create .claude/commands/suggest-claude-md.md first." >&2
@@ -145,7 +149,7 @@ echo 'ログファイル: $LOG_FILE'
 echo 'プロンプトファイル: $TEMP_PROMPT_FILE'
 echo ''
 
-$CLAUDE_BIN --dangerously-skip-permissions --output-format text --print < '$TEMP_PROMPT_FILE' | tee '$TEMP_CLAUDE_OUTPUT'
+$CLAUDE_BIN --output-format text --print < '$TEMP_PROMPT_FILE' | tee '$TEMP_CLAUDE_OUTPUT'
 
 echo ''
 echo '📝 ログファイルを保存中...'
@@ -173,14 +177,16 @@ cat '$TEMP_CLAUDE_OUTPUT' > '$LOG_FILE'
 rm -f '$TEMP_CLAUDE_OUTPUT' '$TEMP_PROMPT_FILE' '$TEMP_SCRIPT'
 
 echo ''
-echo '✅ 完了しました'
+echo '✅ 提案の生成が完了しました'
 echo '保存先: $LOG_FILE'
 echo ''
-echo 'このウィンドウの内容は、上記のログファイルにも出力されています。'
-echo 'シェルが残っています。終了するにはウィンドウを閉じるか exit を入力してください。'
+echo '📝 提案を適用するための対話セッションを起動します...'
+echo '   「適用して」「3番だけ適用して」などと指示できます。'
+echo '   不要な場合は /exit で終了してください。'
 echo ''
 
-exec $SHELL
+cd '$PROJECT_ROOT'
+$CLAUDE_BIN "以下のログファイルにCLAUDE.md更新提案があります。内容を読んで、ユーザーの指示に従って適用してください。提案の一覧を簡潔に表示してから指示を待ってください。ログファイル: $LOG_FILE"
 SCRIPT
 
 # ヒアドキュメント内の変数プレースホルダーを実際の値に置換
@@ -197,9 +203,14 @@ sed -i '' "s|\$CLAUDE_BIN|$CLAUDE_BIN|g" "$TEMP_SCRIPT"
 chmod +x "$TEMP_SCRIPT"
 
 # ターミナルでスクリプトを実行
+# write text を使うことで、ユーザーのデフォルトシェル(fish)上で実行される
+# これにより PATH 設定やプロフィールの初期ディレクトリの問題を回避
 osascript <<EOF
 tell application "iTerm"
-    create window with default profile command "$TEMP_SCRIPT"
+    create window with default profile
+    tell current session of current window
+        write text "cd '$PROJECT_ROOT' && '$TEMP_SCRIPT'"
+    end tell
     activate
 end tell
 EOF
