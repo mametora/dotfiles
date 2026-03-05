@@ -140,14 +140,14 @@ fi
 # Format cost
 COST_DISPLAY=""
 if [ "$(echo "$COST > 0" | bc 2>/dev/null)" = "1" ]; then
-  COST_DISPLAY=" ${GRAY}│${RESET} 💰 \$${COST}"
+  COST_DISPLAY=" ${GRAY}│${RESET} \$${COST}"
 fi
 
-# Line 1: model | context % | lines changed | cost | branch
-printf "🤖 %s ${GRAY}│${RESET} 📊 ${CTX_COLOR}%s%%${RESET} ${GRAY}│${RESET} ✏️  ${GREEN}+%s${RESET}${GRAY}/${RESET}${RED}-%s${RESET}%b ${GRAY}│${RESET} 🔀 %s%b\n" \
+# Line 1: model │ context │ diff │ branch
+printf "%s ${GRAY}│${RESET} ${CTX_COLOR}ctx %s%%${RESET} ${GRAY}│${RESET} ${GREEN}+%s${RESET}${GRAY}/${RESET}${RED}-%s${RESET}%b ${GRAY}│${RESET} %s%b\n" \
   "$MODEL" "$CONTEXT_PCT" "$LINES_ADDED" "$LINES_REMOVED" "$COST_DISPLAY" "$BRANCH" "$DIRTY_DISPLAY"
 
 # Line 2: 5h and 7d rate limits combined
-printf "⏰ 5h ${FIVE_COLOR}%s %s%%${RESET} →%s ${GRAY}│${RESET} 📅 7d ${SEVEN_COLOR}%s %s%%${RESET} →%s\n" \
+printf "${GRAY}5h${RESET} ${FIVE_COLOR}%s %s%%${RESET} ${GRAY}→${RESET}%s ${GRAY}│${RESET} ${GRAY}7d${RESET} ${SEVEN_COLOR}%s %s%%${RESET} ${GRAY}→${RESET}%s\n" \
   "$FIVE_BAR" "$FIVE_H_UTIL" "$FIVE_H_RESET_DISPLAY" \
   "$SEVEN_BAR" "$SEVEN_D_UTIL" "$SEVEN_D_RESET_DISPLAY"
