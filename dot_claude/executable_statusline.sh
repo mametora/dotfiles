@@ -1,17 +1,21 @@
 #!/bin/bash
-# Claude Code statusline - 3 lines: model/context/git, 5h rate limit, 7d rate limit
+# Claude Code statusline - 2 lines: model/context/git, rate limits
 
 input=$(cat)
 
-# Extract fields from stdin JSON
-MODEL=$(echo "$input" | jq -r '.model.display_name // "Unknown"')
-CONTEXT_PCT=$(echo "$input" | jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
-LINES_ADDED=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
-LINES_REMOVED=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
-CWD=$(echo "$input" | jq -r '.workspace.current_dir // "."')
+# Extract all fields in a single jq call
+eval "$(echo "$input" | jq -r '
+  @sh "MODEL=\(.model.display_name // "Unknown")",
+  @sh "CONTEXT_PCT=\(.context_window.used_percentage // 0 | floor | tostring)",
+  @sh "LINES_ADDED=\(.cost.total_lines_added // 0 | tostring)",
+  @sh "LINES_REMOVED=\(.cost.total_lines_removed // 0 | tostring)",
+  @sh "CWD=\(.workspace.current_dir // ".")",
+  @sh "COST=\(.cost.total_cost_usd // 0 | tostring)"
+' 2>/dev/null)"
 
-# Git branch
+# Git branch + dirty state
 BRANCH=$(git -C "$CWD" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "n/a")
+DIRTY=$(git -C "$CWD" diff --quiet HEAD 2>/dev/null && echo "" || echo " ●")
 
 # ANSI 24-bit colors
 GREEN='\033[38;2;151;201;195m'
@@ -45,7 +49,8 @@ build_bar() {
 }
 
 # Fetch rate limit usage with 360s cache
-CACHE_FILE="/tmp/claude-usage-cache.json"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-code"
+CACHE_FILE="$CACHE_DIR/usage-cache.json"
 CACHE_MAX_AGE=360
 FIVE_H_UTIL=0
 FIVE_H_RESET=""
@@ -73,20 +78,24 @@ fetch_usage() {
       local resp
       resp=$(curl -sL --max-time 5 -H "x-api-key: $token" "https://console.anthropic.com/api/oauth/usage" 2>/dev/null)
       if echo "$resp" | jq -e '.five_hour' >/dev/null 2>&1; then
+        mkdir -p "$CACHE_DIR"
         echo "$resp" | jq --argjson ts "$now" '. + {cached_at: $ts}' > "$CACHE_FILE" 2>/dev/null
+        chmod 600 "$CACHE_FILE" 2>/dev/null
       fi
     fi
   fi
 
   if [ -f "$CACHE_FILE" ]; then
-    FIVE_H_UTIL=$(jq -r '.five_hour.utilization // 0' "$CACHE_FILE" | cut -d. -f1)
-    FIVE_H_RESET=$(jq -r '.five_hour.resets_at // empty' "$CACHE_FILE")
-    SEVEN_D_UTIL=$(jq -r '.seven_day.utilization // 0' "$CACHE_FILE" | cut -d. -f1)
-    SEVEN_D_RESET=$(jq -r '.seven_day.resets_at // empty' "$CACHE_FILE")
+    eval "$(jq -r '
+      @sh "FIVE_H_UTIL=\(.five_hour.utilization // 0 | floor | tostring)",
+      @sh "FIVE_H_RESET=\(.five_hour.resets_at // "")",
+      @sh "SEVEN_D_UTIL=\(.seven_day.utilization // 0 | floor | tostring)",
+      @sh "SEVEN_D_RESET=\(.seven_day.resets_at // "")"
+    ' "$CACHE_FILE" 2>/dev/null)"
   fi
 }
 
-# Convert ISO 8601 UTC timestamp to JST display (English locale)
+# Convert ISO 8601 UTC timestamp to JST short display
 format_reset_time() {
   local iso_ts=$1
   local label=$2
@@ -94,7 +103,6 @@ format_reset_time() {
     echo "N/A"
     return
   fi
-  # Parse UTC timestamp, convert to epoch, then format in JST
   local utc_str
   utc_str=$(echo "$iso_ts" | sed 's/\.[^+]*//; s/+00:00//')
   local epoch
@@ -106,31 +114,40 @@ format_reset_time() {
   if [ "$label" = "5h" ]; then
     LANG=en_US.UTF-8 TZ=Asia/Tokyo date -r "$epoch" "+%-l%p" 2>/dev/null | sed 's/AM/am/;s/PM/pm/'
   else
-    LANG=en_US.UTF-8 TZ=Asia/Tokyo date -r "$epoch" "+%b %-d at %-l%p" 2>/dev/null | sed 's/AM/am/;s/PM/pm/'
+    LANG=en_US.UTF-8 TZ=Asia/Tokyo date -r "$epoch" "+%b %-d %-l%p" 2>/dev/null | sed 's/AM/am/;s/PM/pm/'
   fi
 }
 
 fetch_usage
 
-# Format reset times in JST
+# Format reset times
 FIVE_H_RESET_DISPLAY=$(format_reset_time "$FIVE_H_RESET" "5h")
 SEVEN_D_RESET_DISPLAY=$(format_reset_time "$SEVEN_D_RESET" "7d")
 
-# Build bars
+# Build colored elements
 CTX_COLOR=$(color_for_pct "$CONTEXT_PCT")
 FIVE_COLOR=$(color_for_pct "$FIVE_H_UTIL")
 SEVEN_COLOR=$(color_for_pct "$SEVEN_D_UTIL")
 FIVE_BAR=$(build_bar "$FIVE_H_UTIL")
 SEVEN_BAR=$(build_bar "$SEVEN_D_UTIL")
 
-# Line 1: model | context % | lines changed | branch
-printf "🤖 %s ${GRAY}│${RESET} 📊 ${CTX_COLOR}%s%%${RESET} ${GRAY}│${RESET} ✏️  ${GREEN}+%s${RESET}${GRAY}/${RESET}${RED}-%s${RESET} ${GRAY}│${RESET} 🔀 %s\n" \
-  "$MODEL" "$CONTEXT_PCT" "$LINES_ADDED" "$LINES_REMOVED" "$BRANCH"
+# Dirty indicator color
+DIRTY_DISPLAY=""
+if [ -n "$DIRTY" ]; then
+  DIRTY_DISPLAY=" ${RED}●${RESET}"
+fi
 
-# Line 2: 5-hour rate limit
-printf "⏰ 5h  ${FIVE_COLOR}%s${RESET}  ${FIVE_COLOR}%s%%${RESET}  Resets %s (Asia/Tokyo)\n" \
-  "$FIVE_BAR" "$FIVE_H_UTIL" "$FIVE_H_RESET_DISPLAY"
+# Format cost
+COST_DISPLAY=""
+if [ "$(echo "$COST > 0" | bc 2>/dev/null)" = "1" ]; then
+  COST_DISPLAY=" ${GRAY}│${RESET} 💰 \$${COST}"
+fi
 
-# Line 3: 7-day rate limit
-printf "📅 7d  ${SEVEN_COLOR}%s${RESET}  ${SEVEN_COLOR}%s%%${RESET}  Resets %s (Asia/Tokyo)\n" \
+# Line 1: model | context % | lines changed | cost | branch
+printf "🤖 %s ${GRAY}│${RESET} 📊 ${CTX_COLOR}%s%%${RESET} ${GRAY}│${RESET} ✏️  ${GREEN}+%s${RESET}${GRAY}/${RESET}${RED}-%s${RESET}%b ${GRAY}│${RESET} 🔀 %s%b\n" \
+  "$MODEL" "$CONTEXT_PCT" "$LINES_ADDED" "$LINES_REMOVED" "$COST_DISPLAY" "$BRANCH" "$DIRTY_DISPLAY"
+
+# Line 2: 5h and 7d rate limits combined
+printf "⏰ 5h ${FIVE_COLOR}%s %s%%${RESET} →%s ${GRAY}│${RESET} 📅 7d ${SEVEN_COLOR}%s %s%%${RESET} →%s\n" \
+  "$FIVE_BAR" "$FIVE_H_UTIL" "$FIVE_H_RESET_DISPLAY" \
   "$SEVEN_BAR" "$SEVEN_D_UTIL" "$SEVEN_D_RESET_DISPLAY"
