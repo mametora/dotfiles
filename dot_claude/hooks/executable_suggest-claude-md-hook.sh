@@ -123,6 +123,14 @@ TEMP_CLAUDE_OUTPUT=$(mktemp)
 echo "🚀 新しいターミナルウィンドウでCLAUDE.md更新提案を生成します..." >&2
 echo "ログファイル: $LOG_FILE" >&2
 
+# claudeコマンドのフルパスを解決
+# 新しいターミナルではユーザーのシェル設定(fish等)が読み込まれない場合があるため
+CLAUDE_BIN=$(command -v claude)
+if [ -z "$CLAUDE_BIN" ]; then
+  echo "Error: claude command not found in PATH" >&2
+  exit 1
+fi
+
 # ターミナルで実行するスクリプトを作成
 TEMP_SCRIPT=$(mktemp)
 
@@ -137,7 +145,7 @@ echo 'ログファイル: $LOG_FILE'
 echo 'プロンプトファイル: $TEMP_PROMPT_FILE'
 echo ''
 
-claude --dangerously-skip-permissions --output-format text --print < '$TEMP_PROMPT_FILE' | tee '$TEMP_CLAUDE_OUTPUT'
+$CLAUDE_BIN --dangerously-skip-permissions --output-format text --print < '$TEMP_PROMPT_FILE' | tee '$TEMP_CLAUDE_OUTPUT'
 
 echo ''
 echo '📝 ログファイルを保存中...'
@@ -168,9 +176,11 @@ echo ''
 echo '✅ 完了しました'
 echo '保存先: $LOG_FILE'
 echo ''
-echo 'このウィンドウを閉じてください。このウィンドウの内容は、上記のログファイルにも出力されています。'
+echo 'このウィンドウの内容は、上記のログファイルにも出力されています。'
+echo 'シェルが残っています。終了するにはウィンドウを閉じるか exit を入力してください。'
+echo ''
 
-exit
+exec $SHELL
 SCRIPT
 
 # ヒアドキュメント内の変数プレースホルダーを実際の値に置換
@@ -182,14 +192,15 @@ sed -i '' "s|\$LOG_FILE|$LOG_FILE|g" "$TEMP_SCRIPT"
 sed -i '' "s|\$TEMP_PROMPT_FILE|$TEMP_PROMPT_FILE|g" "$TEMP_SCRIPT"
 sed -i '' "s|\$TEMP_CLAUDE_OUTPUT|$TEMP_CLAUDE_OUTPUT|g" "$TEMP_SCRIPT"
 sed -i '' "s|\$TEMP_SCRIPT|$TEMP_SCRIPT|g" "$TEMP_SCRIPT"
+sed -i '' "s|\$CLAUDE_BIN|$CLAUDE_BIN|g" "$TEMP_SCRIPT"
 
 chmod +x "$TEMP_SCRIPT"
 
 # ターミナルでスクリプトを実行
 osascript <<EOF
-tell application "Terminal"
-    do script "$TEMP_SCRIPT"
-    activate  # ターミナルを前面に出したくない場合はこの行をコメントアウトしてください
+tell application "iTerm"
+    create window with default profile command "$TEMP_SCRIPT"
+    activate
 end tell
 EOF
 
