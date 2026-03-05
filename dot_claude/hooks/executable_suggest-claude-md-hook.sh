@@ -40,8 +40,9 @@ if [ ! -f "$TRANSCRIPT_PATH" ]; then
 fi
 
 # プロジェクトルートとログファイル名を生成
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+HOOKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLAUDE_DIR="$(dirname "$HOOKS_DIR")"    # .claude/
+PROJECT_ROOT="$(dirname "$CLAUDE_DIR")" # project root
 CONVERSATION_ID=$(basename "$TRANSCRIPT_PATH" .jsonl)
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 LOG_FILE="/tmp/suggest-claude-md-${CONVERSATION_ID}-${TIMESTAMP}.log"
