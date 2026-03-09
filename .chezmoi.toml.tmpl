@@ -1,0 +1,17 @@
+{{- $name := promptStringOnce . "name" "Git user name" -}}
+{{- $email := promptStringOnce . "email" "Git email" -}}
+{{- $signingkey := promptStringOnce . "signingkey" "SSH signing key" -}}
+
+encryption = "age"
+[age]
+    identity = "~/.config/chezmoi/key.txt"
+    recipient = "age1phdnvrvl0rkxngqud7dvszxlqq9jt8dcsfcavwc8ht4557gg89msxpuemz"
+
+[git]
+    autoCommit = true
+    autoPush = true
+
+[data]
+    name = {{ $name | quote }}
+    email = {{ $email | quote }}
+    signingkey = {{ $signingkey | quote }}

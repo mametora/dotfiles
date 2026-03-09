@@ -29,12 +29,15 @@ chezmoi cat <file>      # Show what chezmoi would write for a target file
 - `dot_claude/` — Claude Code global config (`~/.claude/`)
 - `private_dot_config/` — XDG config (`~/.config/`): fish, gh, git ignore, ecsta
 - `private_dot_ssh/` — SSH config (age-encrypted)
-- `private_dot_gitconfig` — Git config (1Password SSH signing, LFS, aliases)
+- `private_dot_gitconfig.tmpl` — Git config template (1Password SSH signing, LFS, aliases)
 - `private_dot_gnupg/` — GPG agent config (pinentry-mac)
+- `.chezmoi.toml.tmpl` — chezmoi config template (generates `~/.config/chezmoi/chezmoi.toml` on `chezmoi init`)
 
 ## Key Details
 
 - SSH config is encrypted with age (`encrypted_private_config.age`); do not attempt to read or edit directly
-- Fish shell is the primary shell; `config.fish.tmpl` is a template using `{{ .chezmoi.homeDir }}`
+- Templates use custom data from `chezmoi.toml` `[data]` section (name, email, signingkey) in addition to `{{ .chezmoi.homeDir }}`
+- Fish shell is the primary shell; `config.fish.tmpl` is a template
+- Git config is a template (`private_dot_gitconfig.tmpl`); user info is injected from `[data]`
 - Git commits are signed via 1Password SSH agent (`op-ssh-sign`)
 - When adding new files, use the correct chezmoi prefix naming to match the target path and permissions

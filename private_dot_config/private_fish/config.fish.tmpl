@@ -1,36 +1,26 @@
-set -Ux VISUAL "code --wait --new-window"
-set -Ux EDITOR "code --wait --new-window"
+set -gx VISUAL "code --wait --new-window"
+set -gx EDITOR "code --wait --new-window"
 eval (/opt/homebrew/bin/brew shellenv)
 
-# ASDF configuration code
+# ASDF
 if test -z $ASDF_DATA_DIR
-    set _asdf_shims "$HOME/.asdf/shims"
+    fish_add_path --prepend "$HOME/.asdf/shims"
 else
-    set _asdf_shims "$ASDF_DATA_DIR/shims"
+    fish_add_path --prepend "$ASDF_DATA_DIR/shims"
 end
-
-# Do not use fish_add_path (added in Fish 3.2) because it
-# potentially changes the order of items in PATH
-if not contains $_asdf_shims $PATH
-    set -gx --prepend PATH $_asdf_shims
-end
-set --erase _asdf_shims
 
 # pnpm
 set -gx PNPM_HOME "{{ .chezmoi.homeDir }}/Library/pnpm"
-if not string match -q -- $PNPM_HOME $PATH
-  set -gx PATH "$PNPM_HOME" $PATH
-end
-# pnpm end
+fish_add_path --prepend "$PNPM_HOME"
 
-# Added by LM Studio CLI (lms)
-set -gx PATH $PATH {{ .chezmoi.homeDir }}/.lmstudio/bin
-# End of LM Studio CLI section
+# LM Studio CLI
+fish_add_path --append "{{ .chezmoi.homeDir }}/.lmstudio/bin"
 
-set -gx PATH $PATH "$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
+# JetBrains Toolbox
+fish_add_path --append "$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 
-# Created by `pipx` on 2025-10-01 12:08:11
-set PATH $PATH {{ .chezmoi.homeDir }}/.local/bin
+# pipx
+fish_add_path --append "{{ .chezmoi.homeDir }}/.local/bin"
 
 source {{ .chezmoi.homeDir }}/.config/op/plugins.sh
 

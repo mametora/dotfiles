@@ -7,9 +7,9 @@
 [tag]
 	gpgSign = true
 [user]
-	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID4XSnvdNy0UdAExqiEL6yU3tWv+VjQ7asPbGms1+mT/
-	name = Takanori Masuda
-	email = mametora@mmtr.me
+	signingkey = {{ .signingkey }}
+	name = {{ .name }}
+	email = {{ .email }}
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
