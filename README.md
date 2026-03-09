@@ -25,6 +25,7 @@ age の復号鍵（`key.txt`）を `~/.config/chezmoi/key.txt` に配置して�
 | `private_dot_gitconfig.tmpl` | Git 設定（1Password SSH 署名, LFS, エイリアス） |
 | `private_dot_gnupg/` | GPG エージェント設定 |
 | `private_dot_ssh/` | SSH 設定（age 暗号化） |
+| `dot_editorconfig` | グローバル EditorConfig（`~/.editorconfig`） |
 
 ## 主な使い方
 

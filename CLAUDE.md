@@ -31,6 +31,7 @@ chezmoi cat <file>      # Show what chezmoi would write for a target file
 - `private_dot_ssh/` — SSH config (age-encrypted)
 - `private_dot_gitconfig.tmpl` — Git config template (1Password SSH signing, LFS, aliases)
 - `private_dot_gnupg/` — GPG agent config (pinentry-mac)
+- `dot_editorconfig` — Global EditorConfig (`~/.editorconfig`); acts as fallback for projects without their own
 - `.chezmoi.toml.tmpl` — chezmoi config template (generates `~/.config/chezmoi/chezmoi.toml` on `chezmoi init`)
 
 ## Key Details
