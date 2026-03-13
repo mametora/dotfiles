@@ -45,6 +45,28 @@
     "type": "command",
     "command": "~/.claude/statusline.sh"
   },
+  "mcpServers": {
+    "MCP_DOCKER": {
+      "command": "docker",
+      "args": [
+        "mcp",
+        "gateway",
+        "run"
+      ]
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ],
+      "env": {}
+    },
+    "jetbrains": {
+      "url": "http://localhost:64343/sse",
+      "type": "sse"
+    }
+  },
   "enabledPlugins": {
     "serena@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
