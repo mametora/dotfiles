@@ -36,16 +36,22 @@ color_for_pct() {
   fi
 }
 
-# Progress bar (10 segments, ▰▱)
+# Progress bar (10 segments, thin line style)
+DARK_GRAY='\033[38;2;50;55;60m'
+
 build_bar() {
   local pct=$1
+  local color=$2
   local filled=$((pct * 10 / 100))
   [ "$filled" -gt 10 ] && filled=10
   local empty=$((10 - filled))
   local bar=""
-  for ((i = 0; i < filled; i++)); do bar="${bar}▰"; done
-  for ((i = 0; i < empty; i++)); do bar="${bar}▱"; done
-  echo "$bar"
+  bar+="${color}"
+  for ((i = 0; i < filled; i++)); do bar+="━"; done
+  bar+="${DARK_GRAY}"
+  for ((i = 0; i < empty; i++)); do bar+="┄"; done
+  bar+="${RESET}"
+  echo -e "$bar"
 }
 
 # Fetch rate limit usage with 360s cache
@@ -152,8 +158,8 @@ SEVEN_D_RESET_DISPLAY=$(format_reset_time "$SEVEN_D_RESET")
 CTX_COLOR=$(color_for_pct "$CONTEXT_PCT")
 FIVE_COLOR=$(color_for_pct "$FIVE_H_UTIL")
 SEVEN_COLOR=$(color_for_pct "$SEVEN_D_UTIL")
-FIVE_BAR=$(build_bar "$FIVE_H_UTIL")
-SEVEN_BAR=$(build_bar "$SEVEN_D_UTIL")
+FIVE_BAR=$(build_bar "$FIVE_H_UTIL" "$FIVE_COLOR")
+SEVEN_BAR=$(build_bar "$SEVEN_D_UTIL" "$SEVEN_COLOR")
 
 # Dirty indicator color
 DIRTY_DISPLAY=""
@@ -169,8 +175,8 @@ if [ "$(echo "$COST > 0" | bc 2>/dev/null)" = "1" ]; then
 fi
 
 # Line 1: model │ context │ diff │ branch
-printf "󰧑 %s ${GRAY}│${RESET} 󰊚 ${CTX_COLOR}%s%%${RESET} ${GRAY}│${RESET} ${GREEN}+%s${RESET}${GRAY}/${RESET}${RED}-%s${RESET}%b ${GRAY}│${RESET} 󰘬 %s%b\n" \
-  "$MODEL" "$CONTEXT_PCT" "$LINES_ADDED" "$LINES_REMOVED" "$COST_DISPLAY" "$BRANCH" "$DIRTY_DISPLAY"
+printf "󰯉 %s ${GRAY}│${RESET} 󰊚 ${CTX_COLOR}%s%%${RESET} ${GRAY}│${RESET} 󰘬 %s%b ${GRAY}│${RESET} ${GREEN}+%s${RESET}${GRAY}/${RESET}${RED}-%s${RESET}%b\n" \
+  "$MODEL" "$CONTEXT_PCT" "$BRANCH" "$DIRTY_DISPLAY" "$LINES_ADDED" "$LINES_REMOVED" "$COST_DISPLAY"
 
 # Line 2: 5h and 7d rate limits
 if [ "$USAGE_UNAVAILABLE" -eq 1 ]; then
@@ -180,7 +186,7 @@ else
   if [ "$USAGE_STALE" -eq 1 ]; then
     STALE_DISPLAY=" ${YELLOW}[stale]${RESET}"
   fi
-  printf "${GRAY}5h${RESET} ${FIVE_COLOR}%s %s%%${RESET} 󰔟 %s ${GRAY}│${RESET} ${GRAY}7d${RESET} ${SEVEN_COLOR}%s %s%%${RESET} 󰔟 %s%b\n" \
+  printf "${GRAY}5h${RESET} %b ${FIVE_COLOR}%s%%${RESET} 󰔟 %s ${GRAY}│${RESET} ${GRAY}7d${RESET} %b ${SEVEN_COLOR}%s%%${RESET} 󰔟 %s%b\n" \
     "$FIVE_BAR" "$FIVE_H_UTIL" "$FIVE_H_RESET_DISPLAY" \
     "$SEVEN_BAR" "$SEVEN_D_UTIL" "$SEVEN_D_RESET_DISPLAY" "$STALE_DISPLAY"
 fi
