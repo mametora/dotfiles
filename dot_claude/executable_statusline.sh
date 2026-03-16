@@ -52,36 +52,48 @@ build_bar() {
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-code"
 CACHE_FILE="$CACHE_DIR/usage-cache.json"
 CACHE_MAX_AGE=360
+CACHE_STALE_AGE=3600
 FIVE_H_UTIL=0
 FIVE_H_RESET=""
 SEVEN_D_UTIL=0
 SEVEN_D_RESET=""
+USAGE_STALE=0
+USAGE_UNAVAILABLE=0
 
 fetch_usage() {
   local now
   now=$(date +%s)
   local need_fetch=1
+  local cache_age=-1
 
   if [ -f "$CACHE_FILE" ]; then
     local cached_at
     cached_at=$(jq -r '.cached_at // 0' "$CACHE_FILE" 2>/dev/null)
-    local age=$(( now - cached_at ))
-    if [ "$age" -lt "$CACHE_MAX_AGE" ]; then
+    cache_age=$(( now - cached_at ))
+    if [ "$cache_age" -lt "$CACHE_MAX_AGE" ]; then
       need_fetch=0
     fi
   fi
 
   if [ "$need_fetch" -eq 1 ]; then
+    local fetch_ok=0
     local token
     token=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null | jq -r '.claudeAiOauth.accessToken // empty')
     if [ -n "$token" ]; then
       local resp
-      resp=$(curl -sL --max-time 5 -H "x-api-key: $token" "https://console.anthropic.com/api/oauth/usage" 2>/dev/null)
+      resp=$(curl -sL --max-time 5 -H "Authorization: Bearer $token" -H "anthropic-beta: oauth-2025-04-20" "https://api.anthropic.com/api/oauth/usage" 2>/dev/null)
       if echo "$resp" | jq -e '.five_hour' >/dev/null 2>&1; then
         mkdir -p "$CACHE_DIR"
         echo "$resp" | jq --argjson ts "$now" '. + {cached_at: $ts}' > "$CACHE_FILE" 2>/dev/null
         chmod 600 "$CACHE_FILE" 2>/dev/null
+        cache_age=0
+        fetch_ok=1
       fi
+    fi
+
+    # If fetch failed and no cache exists, mark as unavailable
+    if [ "$fetch_ok" -eq 0 ] && [ ! -f "$CACHE_FILE" ]; then
+      USAGE_UNAVAILABLE=1
     fi
   fi
 
@@ -92,13 +104,15 @@ fetch_usage() {
       @sh "SEVEN_D_UTIL=\(.seven_day.utilization // 0 | floor | tostring)",
       @sh "SEVEN_D_RESET=\(.seven_day.resets_at // "")"
     ' "$CACHE_FILE" 2>/dev/null)"
+    if [ "$cache_age" -ge "$CACHE_STALE_AGE" ]; then
+      USAGE_STALE=1
+    fi
   fi
 }
 
-# Convert ISO 8601 UTC timestamp to JST short display
+# Format remaining time until reset as relative duration
 format_reset_time() {
   local iso_ts=$1
-  local label=$2
   if [ -z "$iso_ts" ]; then
     echo "N/A"
     return
@@ -111,18 +125,28 @@ format_reset_time() {
     echo "N/A"
     return
   fi
-  if [ "$label" = "5h" ]; then
-    LANG=en_US.UTF-8 TZ=Asia/Tokyo date -r "$epoch" "+%-l%p" 2>/dev/null | sed 's/AM/am/;s/PM/pm/'
+  local now
+  now=$(date +%s)
+  local diff=$(( epoch - now ))
+  if [ "$diff" -le 0 ]; then
+    echo "now"
+    return
+  fi
+  local days=$(( diff / 86400 ))
+  local hrs=$(( (diff % 86400) / 3600 ))
+  local mins=$(( (diff % 3600) / 60 ))
+  if [ "$days" -ge 1 ]; then
+    echo "${days}d${hrs}h"
   else
-    LANG=en_US.UTF-8 TZ=Asia/Tokyo date -r "$epoch" "+%b %-d %-l%p" 2>/dev/null | sed 's/AM/am/;s/PM/pm/'
+    echo "${hrs}h${mins}m"
   fi
 }
 
 fetch_usage
 
 # Format reset times
-FIVE_H_RESET_DISPLAY=$(format_reset_time "$FIVE_H_RESET" "5h")
-SEVEN_D_RESET_DISPLAY=$(format_reset_time "$SEVEN_D_RESET" "7d")
+FIVE_H_RESET_DISPLAY=$(format_reset_time "$FIVE_H_RESET")
+SEVEN_D_RESET_DISPLAY=$(format_reset_time "$SEVEN_D_RESET")
 
 # Build colored elements
 CTX_COLOR=$(color_for_pct "$CONTEXT_PCT")
@@ -140,14 +164,23 @@ fi
 # Format cost
 COST_DISPLAY=""
 if [ "$(echo "$COST > 0" | bc 2>/dev/null)" = "1" ]; then
-  COST_DISPLAY=" ${GRAY}│${RESET} \$${COST}"
+  COST_ROUNDED=$(printf '%.2f' "$COST")
+  COST_DISPLAY=" ${GRAY}│${RESET} \$${COST_ROUNDED}"
 fi
 
 # Line 1: model │ context │ diff │ branch
-printf "%s ${GRAY}│${RESET} ${CTX_COLOR}ctx %s%%${RESET} ${GRAY}│${RESET} ${GREEN}+%s${RESET}${GRAY}/${RESET}${RED}-%s${RESET}%b ${GRAY}│${RESET} %s%b\n" \
+printf "󰧑 %s ${GRAY}│${RESET} 󰊚 ${CTX_COLOR}%s%%${RESET} ${GRAY}│${RESET} ${GREEN}+%s${RESET}${GRAY}/${RESET}${RED}-%s${RESET}%b ${GRAY}│${RESET} 󰘬 %s%b\n" \
   "$MODEL" "$CONTEXT_PCT" "$LINES_ADDED" "$LINES_REMOVED" "$COST_DISPLAY" "$BRANCH" "$DIRTY_DISPLAY"
 
-# Line 2: 5h and 7d rate limits combined
-printf "${GRAY}5h${RESET} ${FIVE_COLOR}%s %s%%${RESET} ${GRAY}→${RESET}%s ${GRAY}│${RESET} ${GRAY}7d${RESET} ${SEVEN_COLOR}%s %s%%${RESET} ${GRAY}→${RESET}%s\n" \
-  "$FIVE_BAR" "$FIVE_H_UTIL" "$FIVE_H_RESET_DISPLAY" \
-  "$SEVEN_BAR" "$SEVEN_D_UTIL" "$SEVEN_D_RESET_DISPLAY"
+# Line 2: 5h and 7d rate limits
+if [ "$USAGE_UNAVAILABLE" -eq 1 ]; then
+  printf "${GRAY}5h${RESET} ${YELLOW}--%%${RESET} ${GRAY}│${RESET} ${GRAY}7d${RESET} ${YELLOW}--%%${RESET} ${YELLOW}[no data]${RESET}\n"
+else
+  STALE_DISPLAY=""
+  if [ "$USAGE_STALE" -eq 1 ]; then
+    STALE_DISPLAY=" ${YELLOW}[stale]${RESET}"
+  fi
+  printf "${GRAY}5h${RESET} ${FIVE_COLOR}%s %s%%${RESET} 󰔟 %s ${GRAY}│${RESET} ${GRAY}7d${RESET} ${SEVEN_COLOR}%s %s%%${RESET} 󰔟 %s%b\n" \
+    "$FIVE_BAR" "$FIVE_H_UTIL" "$FIVE_H_RESET_DISPLAY" \
+    "$SEVEN_BAR" "$SEVEN_D_UTIL" "$SEVEN_D_RESET_DISPLAY" "$STALE_DISPLAY"
+fi
