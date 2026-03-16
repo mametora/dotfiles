@@ -20,6 +20,7 @@ brew "fzf"
 brew "gh"
 brew "gibo"
 brew "git"
+brew "git-filter-repo"
 brew "glab"
 brew "gmp"
 brew "gnupg"
@@ -29,6 +30,7 @@ brew "iperf3"
 brew "libyaml"
 brew "marp-cli"
 brew "mas"
+brew "nkf"
 brew "php"
 brew "pinentry-mac"
 brew "pipx"
@@ -91,6 +93,7 @@ mas "1Password for Safari", id: 1569813296
 mas "Discovery", id: 1381004916
 mas "GarageBand", id: 682658836
 mas "iMovie", id: 408981434
+mas "Keepa - Price Tracker", id: 1533805339
 mas "Keynote", id: 361285480
 mas "LINE", id: 539883307
 mas "Microsoft Excel", id: 462058435
@@ -99,6 +102,7 @@ mas "Microsoft Word", id: 462054704
 mas "Numbers", id: 361304891
 mas "OneDrive", id: 823766827
 mas "Pages", id: 361309726
+mas "Save to Raindrop.io", id: 1549370672
 mas "SonicWall Mobile Connect", id: 822514576
 mas "Speedtest", id: 1153157709
 mas "WireGuard", id: 1451685025
