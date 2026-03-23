@@ -22,10 +22,12 @@ eval "$(echo "$input" | jq -r '
 BRANCH=$(git -C "$CWD" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "n/a")
 DIRTY=$(git -C "$CWD" diff --quiet HEAD 2>/dev/null && echo "" || echo " ●")
 
-# ANSI 24-bit colors
-GREEN='\033[38;2;151;201;195m'
-RED='\033[38;2;224;108;117m'
+# ANSI 24-bit colors (aligned with gradient endpoints)
+DIFF_GREEN='\033[38;2;0;200;80m'
+DIFF_RED='\033[38;2;255;60;60m'
 GRAY='\033[38;2;74;88;92m'
+BLUE='\033[38;2;110;160;210m'
+AMBER='\033[38;2;220;170;60m'
 DIM='\033[2m'
 R='\033[0m'
 
@@ -103,7 +105,7 @@ format_reset_time() {
 
 DIRTY_DISPLAY=""
 if [ -n "$DIRTY" ]; then
-  DIRTY_DISPLAY=" ${RED}●${R}"
+  DIRTY_DISPLAY=" ${AMBER}●${R}"
 fi
 
 COST_DISPLAY=""
@@ -112,19 +114,18 @@ if [ "$(echo "$COST > 0" | bc 2>/dev/null)" = "1" ]; then
   COST_DISPLAY=" ${GRAY}│${R} \$${COST_ROUNDED}"
 fi
 
-printf "󰯉 %s ${GRAY}│${R} 󰘬 %s%b ${GRAY}│${R} ${GREEN}+%s${R}${GRAY}/${R}${RED}-%s${R}%b\n" \
+printf "${BLUE}󰯉${R} %s ${GRAY}│${R} ${BLUE}󰘬${R} %s%b ${GRAY}│${R} ${DIFF_GREEN}+%s${R}${GRAY}/${R}${DIFF_RED}-%s${R}%b\n" \
   "$MODEL" "$BRANCH" "$DIRTY_DISPLAY" "$LINES_ADDED" "$LINES_REMOVED" "$COST_DISPLAY"
 
 # --- Line 2: ctx │ 5h │ 7d ---
 
-CTX_BAR=$(fmt_bar "$CONTEXT_PCT")
 FIVE_H_INT=${FIVE_H_UTIL%.*}
 SEVEN_D_INT=${SEVEN_D_UTIL%.*}
 
-LINE2="${GRAY}ctx${R} $(fmt_bar "$CONTEXT_PCT")"
+LINE2="${BLUE}ctx${R} $(fmt_bar "$CONTEXT_PCT")"
 
 if [ "$FIVE_H_INT" -eq -1 ] 2>/dev/null && [ "$SEVEN_D_INT" -eq -1 ] 2>/dev/null; then
-  LINE2+=" ${GRAY}│${R} ${GRAY}5h${R} ${DIM}--%%${R} ${GRAY}│${R} ${GRAY}7d${R} ${DIM}--%%${R} ${DIM}[no data]${R}"
+  LINE2+=" ${GRAY}│${R} ${BLUE}5h${R} ${DIM}--%%${R} ${GRAY}│${R} ${BLUE}7d${R} ${DIM}--%%${R} ${DIM}[no data]${R}"
 else
   for LABEL_PCT_RESET in "5h:${FIVE_H_INT}:${FIVE_H_RESET}" "7d:${SEVEN_D_INT}:${SEVEN_D_RESET}"; do
     IFS=':' read -r LABEL PCT RESET <<< "$LABEL_PCT_RESET"
@@ -135,7 +136,7 @@ else
     RESET_DISPLAY=""
     [ -n "$RESET_STR" ] && RESET_DISPLAY=" 󰔟 ${RESET_STR}"
 
-    LINE2+=" ${GRAY}│${R} ${GRAY}${LABEL}${R} ${BAR_STR}${RESET_DISPLAY}"
+    LINE2+=" ${GRAY}│${R} ${BLUE}${LABEL}${R} ${BAR_STR}${RESET_DISPLAY}"
   done
 fi
 printf '%b\n' "$LINE2"
