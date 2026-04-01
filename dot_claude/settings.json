@@ -45,6 +45,26 @@
     "type": "command",
     "command": "~/.claude/statusline.sh"
   },
+  "enabledPlugins": {
+    "serena@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "codex@openai-codex": true
+  },
+  "extraKnownMarketplaces": {
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    }
+  },
+  "language": "Japanese",
+  "alwaysThinkingEnabled": true,
+  "autoUpdatesChannel": "latest",
   "mcpServers": {
     "MCP_DOCKER": {
       "command": "docker",
@@ -66,16 +86,5 @@
       "url": "http://localhost:64343/sse",
       "type": "sse"
     }
-  },
-  "enabledPlugins": {
-    "serena@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "pr-review-toolkit@claude-plugins-official": true,
-    "feature-dev@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "code-review@claude-plugins-official": true
-  },
-  "language": "Japanese",
-  "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "latest"
+  }
 }
