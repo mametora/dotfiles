@@ -118,3 +118,4 @@ http-client.private.env.json
 
 # claude
 **/.claude/settings.local.json
+**/.claude.local.md

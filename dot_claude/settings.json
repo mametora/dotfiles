@@ -52,7 +52,10 @@
     "feature-dev@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
-    "codex@openai-codex": true
+    "codex@openai-codex": true,
+    "slack@claude-plugins-official": true,
+    "notion@claude-plugins-official": true,
+    "using-cmux@hummer98-using-cmux": true
   },
   "extraKnownMarketplaces": {
     "openai-codex": {
@@ -60,11 +63,19 @@
         "source": "github",
         "repo": "openai/codex-plugin-cc"
       }
+    },
+    "hummer98-using-cmux": {
+      "source": {
+        "source": "github",
+        "repo": "hummer98/using-cmux"
+      }
     }
   },
   "language": "Japanese",
   "alwaysThinkingEnabled": true,
   "autoUpdatesChannel": "latest",
+  "tui": "fullscreen",
+  "agentPushNotifEnabled": true,
   "mcpServers": {
     "MCP_DOCKER": {
       "command": "docker",
