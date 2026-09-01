@@ -2,17 +2,17 @@ set -gx VISUAL "code --wait --new-window"
 set -gx EDITOR "code --wait --new-window"
 eval (/opt/homebrew/bin/brew shellenv)
 
+# Homebrew vendor configuration runs before this file, so activate mise again
+# after brew shellenv has finalized PATH ordering.
+if command -q mise
+    mise activate fish | source
+end
+
 # pnpm
 set -gx PNPM_HOME "{{ .chezmoi.homeDir }}/Library/pnpm"
 
-# Prepend asdf shims and pnpm to PATH
-# Do not use fish_add_path because it won't reorder paths already in PATH,
-# so these would remain behind /opt/homebrew/bin added by brew shellenv above.
-if test -z $ASDF_DATA_DIR
-    set -gx PATH "$PNPM_HOME" "$HOME/.asdf/shims" $PATH
-else
-    set -gx PATH "$PNPM_HOME" "$ASDF_DATA_DIR/shims" $PATH
-end
+# pnpm commands installed outside mise
+fish_add_path --prepend "$PNPM_HOME"
 
 # LM Studio CLI
 fish_add_path --append "{{ .chezmoi.homeDir }}/.lmstudio/bin"
